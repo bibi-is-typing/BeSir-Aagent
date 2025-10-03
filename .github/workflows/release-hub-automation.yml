@@ -38,7 +38,7 @@ jobs:
       - name: 🔔 Slack - Release Started Notification
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          channel-id: 'dev-release'
+          channel-id: 'C09KC84AYU8'
           slack-message: |
             🚀 *[${{ steps.pr_info.outputs.PR_TITLE }}] 릴리즈가 시작되었습니다.*
             
