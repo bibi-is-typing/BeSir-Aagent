@@ -77,14 +77,28 @@ jobs:
           PR_URL: ${{ steps.pr_info.outputs.PR_URL }}
           COMMIT_MESSAGES: ${{ steps.commits.outputs.COMMIT_MESSAGES }}
       
-      - name: 🔔 Slack - Team Notifications
+      - name: 🔔 Slack - Marketing Team Notification
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          channel-id: 'marketing-team'
+          channel-id: 'C09JBHZLGNP'
           slack-message: |
             📢 *새로운 릴리즈 콘텐츠가 Notion에 준비되었습니다!*
+            
             릴리즈: ${{ steps.pr_info.outputs.PR_TITLE }}
-            👉 [Notion 확인하기](https://www.notion.so/BeSir-Test-281b5b223972809996a6e7cc3b80cbb2)
+            👉 [마케팅 콘텐츠 확인하기](https://www.notion.so/281b5b2239728171a1ead980dd3affd3)
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        continue-on-error: true
+      
+      - name: 🔔 Slack - CS Team Notification
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: 'C09J2LQMDL7'
+          slack-message: |
+            📞 *새로운 릴리즈 CS 가이드가 준비되었습니다!*
+            
+            릴리즈: ${{ steps.pr_info.outputs.PR_TITLE }}
+            👉 [CS 가이드 확인하기](https://www.notion.so/281b5b22397281ddba9affe7d1fe4bd0)
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         continue-on-error: true
