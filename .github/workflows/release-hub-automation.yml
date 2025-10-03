@@ -1,0 +1,90 @@
+name: 🚀 Release Hub Automation
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  release-hub:
+    # Only run if PR was merged and has 'release' label
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📦 Checkout code
+        uses: actions/checkout@v3
+      
+      - name: 🔍 Extract PR Information
+        id: pr_info
+        run: |
+          echo "PR_TITLE=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          echo "PR_BODY=${{ github.event.pull_request.body }}" >> $GITHUB_OUTPUT
+          echo "PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "PR_AUTHOR=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
+          echo "PR_URL=${{ github.event.pull_request.html_url }}" >> $GITHUB_OUTPUT
+          echo "MERGED_AT=${{ github.event.pull_request.merged_at }}" >> $GITHUB_OUTPUT
+      
+      - name: 📝 Get Commit Messages
+        id: commits
+        run: |
+          COMMITS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].messageHeadline' | jq -Rs .)
+          echo "COMMIT_MESSAGES=$COMMITS" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 🔔 Slack - Release Started Notification
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: 'dev-release'
+          slack-message: |
+            🚀 *[${{ steps.pr_info.outputs.PR_TITLE }}] 릴리즈가 시작되었습니다.*
+            
+            • PR #${{ steps.pr_info.outputs.PR_NUMBER }}
+            • 작성자: ${{ steps.pr_info.outputs.PR_AUTHOR }}
+            • URL: ${{ steps.pr_info.outputs.PR_URL }}
+            • 머지 시간: ${{ steps.pr_info.outputs.MERGED_AT }}
+            
+            _Notion 릴리즈 허브에 데이터를 수집하고 있습니다..._
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        continue-on-error: true
+      
+      - name: 🤖 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: 📦 Install Dependencies
+        run: |
+          npm install @notionhq/client axios
+      
+      - name: 🧠 AI Content Generation & Notion Update
+        run: node .github/scripts/release-hub-processor.js
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_RELEASE_DB_ID: ${{ secrets.NOTION_RELEASE_DB_ID }}
+          NOTION_MARKETING_DB_ID: ${{ secrets.NOTION_MARKETING_DB_ID }}
+          NOTION_CS_DB_ID: ${{ secrets.NOTION_CS_DB_ID }}
+          NOTION_SALES_DB_ID: ${{ secrets.NOTION_SALES_DB_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PR_TITLE: ${{ steps.pr_info.outputs.PR_TITLE }}
+          PR_BODY: ${{ steps.pr_info.outputs.PR_BODY }}
+          PR_NUMBER: ${{ steps.pr_info.outputs.PR_NUMBER }}
+          PR_AUTHOR: ${{ steps.pr_info.outputs.PR_AUTHOR }}
+          PR_URL: ${{ steps.pr_info.outputs.PR_URL }}
+          COMMIT_MESSAGES: ${{ steps.commits.outputs.COMMIT_MESSAGES }}
+      
+      - name: 🔔 Slack - Team Notifications
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: 'marketing-team'
+          slack-message: |
+            📢 *새로운 릴리즈 콘텐츠가 Notion에 준비되었습니다!*
+            릴리즈: ${{ steps.pr_info.outputs.PR_TITLE }}
+            👉 [Notion 확인하기](https://www.notion.so/BeSir-Test-281b5b223972809996a6e7cc3b80cbb2)
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        continue-on-error: true
