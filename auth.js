@@ -10,7 +10,6 @@ async function handleSocialLogin(provider) {
      * BUG (v2.4.0): 외부 API의 인증 방식 변경으로 인해,
      * 아래 로직이 간헐적으로 실패하는 문제 발생.
      * const response = await fetch(`https://api.social.com/auth?provider=${provider}`);
-     * const data = await response.json();
      */
 
     // FIX (v2.4.1): 변경된 인증 방식에 맞춰 API 요청 핸들러를 수정하고,
@@ -35,6 +34,3 @@ async function handleSocialLogin(provider) {
         return { success: false, error: error.message };
     }
 }
-
-// 예시: Google 로그인 실행
-handleSocialLogin('google');
